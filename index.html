@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>SMART POLYTUNNEL</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+:root{
+  --blue-dark:#0b1c2d;
+  --blue-main:#0d47a1;
+  --blue-light:#1976d2;
+  --gold:#fbc02d;
+  --white:#f5f7fa;
+}
+
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:url("https://static.vecteezy.com/system/resources/previews/001/882/531/original/dark-blue-technology-background-free-vector.jpg");
+  background-size:cover;
+  background-position:center;
+  color:var(--gold);
+  text-align:center;
+}
+
+h1{
+  margin:20px 0;
+}
+
+/* LOGIN */
+#loginForm{
+  max-width:380px;
+  margin:80px auto;
+  background:rgba(11,28,45,.95);
+  padding:25px;
+  border-radius:15px;
+  border:1px solid var(--gold);
+}
+
+#loginForm input{
+  width:100%;
+  padding:12px;
+  margin:10px 0;
+  border-radius:10px;
+  border:1px solid var(--gold);
+  background:#0f2a44;
+  color:white;
+}
+
+#loginForm button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:linear-gradient(135deg,var(--gold),#c49000);
+  font-weight:bold;
+  cursor:pointer;
+}
+
+/* DASHBOARD */
+#dashboard{ display:none; }
+
+.relay-container{
+  max-width:900px;
+  margin:auto;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+
+.card{
+  background:rgba(11,28,45,.9);
+  width:220px;
+  margin:12px;
+  padding:15px;
+  border-radius:15px;
+  border:1px solid var(--gold);
+}
+
+.card h2{ color:var(--gold); }
+
+.switch{
+  position:relative;
+  width:52px;
+  height:26px;
+  margin:auto;
+}
+.switch input{ display:none; }
+.slider{
+  position:absolute;
+  inset:0;
+  background:#555;
+  border-radius:26px;
+}
+.slider:before{
+  content:"";
+  position:absolute;
+  width:20px;
+  height:20px;
+  left:3px;
+  top:3px;
+  background:white;
+  border-radius:50%;
+  transition:.3s;
+}
+input:checked + .slider{
+  background:#2e7d32;
+}
+input:checked + .slider:before{
+  transform:translateX(26px);
+}
+
+button.logout{
+  margin:20px;
+  padding:12px 30px;
+  border:none;
+  border-radius:10px;
+  background:linear-gradient(135deg,var(--gold),#c49000);
+  font-weight:bold;
+  cursor:pointer;
+}
+
+@media(max-width:600px){
+  .card{ width:160px; }
+  h1{ font-size:1.3rem; }
+}
+</style>
+</head>
+
+<body>
+
+<h1>SMART POLYTUNNEL</h1>
+
+<div id="loginForm">
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="login()">LOGIN</button>
+</div>
+
+<div id="dashboard">
+
+  <div class="relay-container">
+
+    <div class="card">
+      <h2>🌡 TEMP</h2>
+      <p><span id="temp">--</span> °C</p>
+    </div>
+
+    <div class="card">
+      <h2>💧 HUMIDITY</h2>
+      <p><span id="hum">--</span> %</p>
+    </div>
+
+    <div class="card">
+      <h2>🎯 SET TEMP</h2>
+      <input type="number" id="setTemp">
+    </div>
+
+    <div class="card">
+      <h2>🎯 SET HUM</h2>
+      <input type="number" id="setHum">
+    </div>
+
+    <div class="card">
+      <h2>🚿 SPRINKLER</h2>
+      <p id="sprinklerStatus">OFF</p>
+    </div>
+
+    <div class="card">
+      <h2>🧪 FERT PUMP 1</h2>
+      <label class="switch">
+        <input type="checkbox" id="fp1">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="card">
+      <h2>🧪 FERT PUMP 2</h2>
+      <label class="switch">
+        <input type="checkbox" id="fp2">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="card">
+      <h2>💡 LIGHT</h2>
+      <label class="switch">
+        <input type="checkbox" id="light">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+  </div>
+
+  <button class="logout" onclick="logout()">LOGOUT</button>
+</div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+
+<script>
+const firebaseConfig={
+  apiKey:"AIzaSyD0YRMfJeLWRbRhTz6sVldri0sWrA7xtKQ",
+  authDomain:"esp32--relay-control.firebaseapp.com",
+  databaseURL:"https://esp32--relay-control-default-rtdb.europe-west1.firebasedatabase.app"
+};
+firebase.initializeApp(firebaseConfig);
+
+const db=firebase.database().ref("/POLYTUNNEL");
+
+const EMAIL="abijayasinghe@gmail.com";
+const PASS="ABI12340";
+
+function login(){
+  if(email.value===EMAIL && password.value===PASS){
+    firebase.auth().signInWithEmailAndPassword(email.value,password.value)
+    .then(()=>{
+      loginForm.style.display="none";
+      dashboard.style.display="block";
+      start();
+    });
+  } else alert("Wrong login");
+}
+
+function logout(){
+  firebase.auth().signOut();
+  dashboard.style.display="none";
+  loginForm.style.display="block";
+}
+
+function start(){
+  db.child("temperature").on("value",s=>temp.innerText=s.val());
+  db.child("humidity").on("value",s=>hum.innerText=s.val());
+
+  sync("fert_pump1",fp1);
+  sync("fert_pump2",fp2);
+  sync("light",light);
+
+  setInterval(autoSprinkler,2000);
+}
+
+function sync(path,el){
+  el.onchange=()=>db.child(path).set(el.checked);
+  db.child(path).on("value",s=>el.checked=s.val());
+}
+
+function autoSprinkler(){
+  db.once("value",snap=>{
+    let d=snap.val(); if(!d) return;
+    let okT=Math.abs(d.temperature-setTemp.value)<=1;
+    let okH=Math.abs(d.humidity-setHum.value)<=3;
+    db.child("sprinkler").set(okT && okH);
+    sprinklerStatus.innerText=(okT && okH)?"ON":"OFF";
+  });
+}
+</script>
+
+</body>
+</html>
